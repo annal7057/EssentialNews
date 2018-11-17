@@ -1,0 +1,111 @@
+package com.sagarannaldas.essentialnews;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainActivity extends BaseActivity  implements GetFlickrJsonData.OnDataAvailable,
+        RecyclerItemClickListener.OnRecyclerClickListener{
+    private static final String TAG = "MainActivity";
+    private FlickrRecyclerViewAdapter mflickrRecyclerViewAdapter;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate: starts");
+        setContentView(R.layout.activity_main);
+        activateToolbar(false );
+
+        RecyclerView recyclerView =(RecyclerView) findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        recyclerView.addOnItemTouchListener(new RecyclerItemClickListener(this, recyclerView, this));
+
+        mflickrRecyclerViewAdapter = new FlickrRecyclerViewAdapter(this, new ArrayList<Photo>());
+        recyclerView.setAdapter(mflickrRecyclerViewAdapter);
+
+//        GetRawData getRawData = new GetRawData(this);
+//        GettRawData.execute("https://api.flickr.com/services/feeds/photos_public.gne?tags=android,naugat,sdk&tagmode=any&format=json&nojsoncallback=1");
+
+        Log.d(TAG, "onCreate: ends");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(TAG, "onResume: starts");
+        super.onResume();
+        GetFlickrJsonData getFlickrJsonData = new GetFlickrJsonData(this,"https://api.flickr.com/services/feeds/photos_public.gne?","en-us",true);
+//        getFlickrJsonData.executeOnSameThread("android ,nougat");
+        getFlickrJsonData.execute("android,nougat");
+        Log.d(TAG, "onResume: ends ");
+    }
+
+    @Override
+    public void onDataAvailable(List<Photo> data, DownloadStatus status){
+        Log.d(TAG, "onDataAvailable: starts");
+        if(status == DownloadStatus.OK){
+            mflickrRecyclerViewAdapter.loadNewData(data);
+        }else{
+            //download or pracessing failed
+            Log.e(TAG, "onDataAvailable: failed with status " +status );
+        }
+
+        Log.d(TAG, "onDataAvailable: ends");
+
+    }
+
+    @Override
+    public void onItemClick(View view, int position) {
+        Log.d(TAG, "onItemClick: starts");
+//        Toast.makeText(MainActivity.this,"normal tap at position" +position,Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this,PhotoDetailActivity.class);
+        intent.putExtra(PHOTO_TRANSFER,mflickrRecyclerViewAdapter.getPhoto(position));
+        startActivity(intent);
+    }
+
+    @Override
+    public void onItemLongClick(View view, int position) {
+        Log.d(TAG, "onItemLongClick: starts");
+        Toast.makeText(MainActivity.this,"normal tap at position" +position,Toast.LENGTH_SHORT).show();
+
+        Intent intent = new Intent(this,PhotoDetailActivity.class);
+        intent.putExtra(PHOTO_TRANSFER,mflickrRecyclerViewAdapter.getPhoto(position));
+        startActivity(intent);
+
+    }
+}
